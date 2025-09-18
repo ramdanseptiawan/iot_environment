@@ -4,11 +4,27 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: hello-go
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
       interval: 10s
       timeout: 3s
       retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hello-go.rule=Host(`hello.mudah.cloud`)"
+      - "traefik.http.routers.hello-go.entrypoints=web"
+      # kalau punya HTTPS/ACME:
+      # - "traefik.http.routers.hello-go-secure.rule=Host(`hello.mudah.cloud`)"
+      # - "traefik.http.routers.hello-go-secure.entrypoints=websecure"
+      # - "traefik.http.routers.hello-go-secure.tls=true"
+      # - "traefik.http.routers.hello-go-secure.tls.certresolver=myresolver"
+      - "traefik.http.services.hello-go.loadbalancer.server.port=3000"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
