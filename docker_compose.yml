@@ -5,8 +5,9 @@ services:
     image: influxdb:2.7-alpine
     container_name: influxdb
     restart: unless-stopped
-    ports:
-      - "8086:8086"
+    # Tidak perlu expose ke publik kalau hanya dipakai internal:
+    # ports:
+    #   - "8086:8086"
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
@@ -19,29 +20,31 @@ services:
       - influxdb_config:/etc/influxdb2
     networks:
       - sensor_network
+    healthcheck:
+      # alpine/busybox punya wget
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
 
   sensor-api:
     build: .
     container_name: sensor-api
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "3000:3000"
     environment:
       - INFLUXDB_URL=http://influxdb:8086
       - INFLUXDB_TOKEN=my-super-secret-auth-token
       - INFLUXDB_ORG=myorg
       - INFLUXDB_BUCKET=sensor_data
-      - PORT=8080
+      - PORT=3000
     depends_on:
-      - influxdb
+      influxdb:
+        condition: service_healthy
     networks:
       - sensor_network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
 volumes:
   influxdb_data:
