@@ -1,55 +1,14 @@
-version: '3.8'
-
 services:
-  influxdb:
-    image: influxdb:2.7-alpine
-    container_name: influxdb
-    restart: unless-stopped
-    environment:
-      - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=admin
-      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
-      - DOCKER_INFLUXDB_INIT_ORG=myorg
-      - DOCKER_INFLUXDB_INIT_BUCKET=sensor_data
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-auth-token
-    volumes:
-      - influxdb_data:/var/lib/influxdb2
-      - influxdb_config:/etc/influxdb2
-    networks: [sensor_network]
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
-      start_period: 20s
-
-  sensor-api:
-    build: .
-    container_name: sensor-api
-    restart: unless-stopped
+  hello-go:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hello-go
     ports:
       - "3000:3000"
-    environment:
-      - INFLUXDB_URL=http://influxdb:8086
-      - INFLUXDB_TOKEN=my-super-secret-auth-token
-      - INFLUXDB_ORG=myorg
-      - INFLUXDB_BUCKET=sensor_data
-      - PORT=3000
-    depends_on:
-      influxdb:
-        condition: service_healthy
-    networks: [sensor_network]
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 20s
-      timeout: 5s
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 3s
       retries: 5
-      start_period: 20s
-
-volumes:
-  influxdb_data:
-  influxdb_config:
-
-networks:
-  sensor_network:
-    driver: bridge
