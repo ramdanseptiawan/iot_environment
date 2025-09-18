@@ -94,6 +94,14 @@ func main() {
 	
 	// Health check
 	r.HandleFunc("/health", app.healthCheck).Methods("GET")
+
+	r.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "ok",
+		"message": "API is working",
+	})
+}).Methods("GET")
 	
 	// CORS middleware
 	r.Use(corsMiddleware)
